@@ -12,15 +12,20 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Travel_Organiser"
         tools:targetApi="31">
+
         <activity
-            android:name=".MainActivity"
-            android:exported="true">
+            android:name=".MainMenu"
+            android:exported="true"
+            android:theme="@style/Theme.Travel_Organiser">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".PlanCreator"
+            android:exported="true" />
     </application>
 
 </manifest>
