@@ -6,4 +6,147 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#F8F1C9"
-    tools:context=".PlanCreator"/>
+    tools:context=".PlanCreator">
+
+    <Button
+        android:id="@+id/back_btn"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:background="@drawable/arrow_back"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <EditText
+        android:id="@+id/plan_name_edt"
+        android:layout_width="380dp"
+        android:layout_height="53dp"
+        android:layout_marginTop="8dp"
+        android:ems="10"
+        android:fontFamily="@font/nunito_italic"
+        android:hint="Title"
+        android:inputType="text"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.516"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/plan_name_tv" />
+
+    <EditText
+        android:id="@+id/plan_desc_edt"
+        android:layout_width="380dp"
+        android:layout_height="132dp"
+        android:layout_marginTop="12dp"
+        android:ems="10"
+        android:fontFamily="@font/nunito_italic"
+        android:hint="Description"
+        android:inputType="text"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.58"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/plan_desc_tv" />
+
+    <TextView
+        android:id="@+id/plan_name_tv"
+        android:layout_width="380dp"
+        android:layout_height="43dp"
+        android:layout_marginStart="18dp"
+        android:layout_marginTop="72dp"
+        android:layout_marginEnd="20dp"
+        android:fontFamily="@font/nunito_black"
+        android:text="Title"
+        android:textSize="25sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.285"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/plan_time_tv_bold"
+        android:layout_width="166dp"
+        android:layout_height="47dp"
+        android:layout_marginTop="388dp"
+        android:layout_marginEnd="18dp"
+        android:fontFamily="@font/nunito_black"
+        android:text="Due time"
+        android:textAlignment="center"
+        android:textSize="30sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/plan_date_tv_bold"
+        android:layout_width="166dp"
+        android:layout_height="47dp"
+        android:layout_marginStart="18dp"
+        android:layout_marginTop="388dp"
+        android:fontFamily="@font/nunito_black"
+        android:text="Due date"
+        android:textAlignment="center"
+        android:textSize="30sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.008"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/plan_time_tv"
+        android:layout_width="167dp"
+        android:layout_height="42dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="20dp"
+        android:fontFamily="@font/nunito_black"
+        android:hint="Pick a time"
+        android:textAlignment="center"
+        android:textSize="30sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/plan_time_btn" />
+
+    <TextView
+        android:id="@+id/plan_date_tv"
+        android:layout_width="162dp"
+        android:layout_height="42dp"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="12dp"
+        android:fontFamily="@font/nunito_black"
+        android:hint="Pick a date"
+        android:textAlignment="center"
+        android:textSize="30sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/plan_date_btn" />
+
+    <TextView
+        android:id="@+id/plan_desc_tv"
+        android:layout_width="380dp"
+        android:layout_height="43dp"
+        android:layout_marginStart="18dp"
+        android:layout_marginTop="188dp"
+        android:fontFamily="@font/nunito_black"
+        android:text="Description"
+        android:textSize="25sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/plan_time_btn"
+        android:layout_width="164dp"
+        android:layout_height="52dp"
+        android:layout_marginEnd="20dp"
+        android:fontFamily="@font/nunito_bold"
+        android:text="Pick a time"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/plan_time_tv_bold" />
+
+    <Button
+        android:id="@+id/plan_date_btn"
+        android:layout_width="164dp"
+        android:layout_height="52dp"
+        android:layout_marginStart="20dp"
+        android:fontFamily="@font/nunito_bold"
+        android:text="Pick a date"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/plan_date_tv_bold" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
