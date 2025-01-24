@@ -5,18 +5,24 @@ import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.widget.Button
+import android.widget.CheckBox
 import android.widget.EditText
-import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.TimePicker
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 
 class PlanCreator : AppCompatActivity() {
     private val sharedPreferencesName = "TravelPlan"
@@ -36,17 +42,31 @@ class PlanCreator : AppCompatActivity() {
             insets
         }
 
+        // Matching the status bar and navigation bar colors with the background color
+        val backgroundColor = resources.getColor(R.color.backgroundColor)
+        window.navigationBarColor = backgroundColor
+        window.statusBarColor = backgroundColor
+
         // Views
         val backBtn: Button = findViewById(R.id.back_btn)
         val timeBtn: Button = findViewById(R.id.plan_time_btn)
         val dateBtn: Button = findViewById(R.id.plan_date_btn)
+        val saveBtn: Button = findViewById(R.id.save_plan_btn)
 
-        var planTimeTv: TextView = findViewById(R.id.plan_time_tv)
-        var planDateTv: TextView = findViewById(R.id.plan_date_tv)
+        val planTimeTv: TextView = findViewById(R.id.plan_time_tv)
+        val planDateTv: TextView = findViewById(R.id.plan_date_tv)
+        val planLetterLimTv: TextView = findViewById(R.id.plan_letterLim_tv)
+
+        val planTitleEditable: EditText = findViewById(R.id.plan_title_edt)
+        val planDescEditable: EditText = findViewById(R.id.plan_desc_edt)
+
+        val reminderCheckbox: CheckBox = findViewById(R.id.reminder_chkbx)
+
+        val maxChars = 120
 
         // Date Picker Listener
         val datePickerDialogListener =
-            DatePickerDialog.OnDateSetListener { view, year, monthOfYear, dayOfMonth ->
+            DatePickerDialog.OnDateSetListener { _, year, monthOfYear, dayOfMonth ->
                 val formattedDate = "${dayOfMonth}/${monthOfYear + 1}/$year"
                 planDateTv.text = formattedDate
             }
@@ -59,6 +79,7 @@ class PlanCreator : AppCompatActivity() {
                         minute < 10 -> {
                             "${hourOfDay}:0${minute}"
                         }
+
                         else -> {
                             "${hourOfDay}:${minute}"
                         }
@@ -66,6 +87,19 @@ class PlanCreator : AppCompatActivity() {
                     planTimeTv.text = formattedTime
                 }
             }
+
+        planDescEditable.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                val remainingChars = maxChars - (s?.length ?: 0)
+                planLetterLimTv.text = "$remainingChars/120"
+                if (remainingChars <= 0) planLetterLimTv.setTextColor(Color.RED)
+                else planLetterLimTv.setTextColor(Color.DKGRAY)
+            }
+
+            override fun afterTextChanged(s: Editable?) {}
+        })
 
         // Set up Time Button click listener
         timeBtn.setOnClickListener {
@@ -97,136 +131,36 @@ class PlanCreator : AppCompatActivity() {
             startActivity(intent)
         }
 
-        // Commented code for later use:
-        /*
-        //var index: Int
-        //val addBtn: Button = findViewById(R.id.add_btn)
-        //val delBtn: Button = findViewById(R.id.del_btn)
-        //val enterPlan: EditText = findViewById(R.id.enterPlan)
-        val backBtn: Button = findViewById(R.id.back_btn)
-        val timeBtn: Button = findViewById(R.id.plan_time_btn)
-        val dateBtn: Button = findViewById(R.id.plan_date_btn)
-        //val linearLayout: LinearLayout = findViewById(R.id.linearLayout)
+        saveBtn.setOnClickListener {
+            val title = planTitleEditable.text.toString()
+            val description = planDescEditable.text.toString()
+            val date = planDateTv.text.toString()
+            val time = planTimeTv.text.toString()
+            val isReminderChecked = reminderCheckbox.isChecked
 
-        var planTimeTv: TextView = findViewById(R.id.plan_time_tv)
-        var planDateTv: TextView = findViewById(R.id.plan_date_tv)
-
-        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
-        val current = LocalDateTime.now().format(formatter)
-
-        val savedPlans = loadPlans()
-        savedPlans.forEachIndexed { i, plan ->
-            addPlanToLayout(linearLayout, plan, i + 1)
-        }
-        index = savedPlans.size + 1
-
-        val datePickerDialogListener =
-            DatePickerDialog.OnDateSetListener { view, year, monthOfYear, dayOfMonth ->
-                val formattedDate = "${dayOfMonth}/${monthOfYear + 1}/$year"
-                planDateTv.text = formattedDate
-            }
-
-        val timePickerDialogListener: TimePickerDialog.OnTimeSetListener =
-            object : TimePickerDialog.OnTimeSetListener {
-                override fun onTimeSet(view: TimePicker?, hourOfDay: Int, minute: Int) {
-                    val formattedTime: String = when {
-                        minute < 10 -> {
-                            "${hourOfDay}:0${minute}"
-                        }
-                        else -> {
-                            "${hourOfDay}:${minute}"
-                        }
-                    }
-                    planTimeTv.text = formattedTime
-                }
-            }
-
-        addBtn.setOnClickListener {
-            val enterPlanText = enterPlan.text.toString()
-            if (enterPlanText.isNotBlank()) {
-                addPlanToLayout(linearLayout, enterPlanText, index)
-                savePlan(enterPlanText)
-                index++
-                enterPlan.text.clear()
+            if (title.isNotBlank() && description.isNotBlank() && date.isNotBlank() && time.isNotBlank()) {
+                val plan = Plan(title, description, date, time, isReminderChecked)
+                savePlan(plan)
             } else {
-                showDialog("Alert", "Enter a plan", "OK")
+                Toast.makeText(this, "Please fill in all fields", Toast.LENGTH_SHORT).show()
             }
+
         }
 
-        delBtn.setOnClickListener {
-            val childCount = linearLayout.childCount
-            if (childCount > 0) {
-                linearLayout.removeViewAt(childCount - 1)
-                removeLastPlan()
-                if (index > 1) index--
-            } else {
-                showDialog("Alert", "There are no plans to delete", "OK")
-            }
-        }
-
-        backBtn.setOnClickListener {
-            val intent = Intent(this, MainMenu::class.java)
-            startActivity(intent)
-        }
-        */
-
-        /*
-        private fun addPlanToLayout(linearLayout: LinearLayout, plan: String, index: Int) {
-            val newPlanText = TextView(this)
-            newPlanText.text = "$index. $plan"
-            newPlanText.setTextSize(TypedValue.COMPLEX_UNIT_SP, 30f)
-            newPlanText.typeface = Typeface.create("sans-serif", Typeface.NORMAL)
-
-            newPlanText.alpha = 0f
-            newPlanText.animate().alpha(1f).setDuration(200).start()
-
-            linearLayout.addView(newPlanText)
-        }
-
-        private fun savePlan(plan: String) {
-            val sharedPreferences = getSharedPreferences(sharedPreferencesName, Context.MODE_PRIVATE)
-            val existingPlans = loadPlans().toMutableList()
-            existingPlans.add(plan)
-            sharedPreferences.edit().putString(plansKey, Gson().toJson(existingPlans)).apply()
-        }
-
-        private fun removeLastPlan() {
-            val sharedPreferences = getSharedPreferences(sharedPreferencesName, Context.MODE_PRIVATE)
-            val existingPlans = loadPlans().toMutableList()
-            if (existingPlans.isNotEmpty()) {
-                existingPlans.removeAt(existingPlans.size - 1)
-                sharedPreferences.edit().putString(plansKey, Gson().toJson(existingPlans)).apply()
-            }
-        }
-
-        private fun loadPlans(): List<String> {
-            val sharedPreferences = getSharedPreferences(sharedPreferencesName, Context.MODE_PRIVATE)
-            val json = sharedPreferences.getString(plansKey, "[]")
-            val type = object : TypeToken<List<String>>() {}.type
-            return Gson().fromJson(json, type)
-        }
-
-        private fun showDialog(
-            title: String,
-            message: String,
-            positiveButtonText: String = "OK",
-            positiveButtonAction: (() -> Unit)? = null,
-            negativeButtonText: String? = null,
-            negativeButtonAction: (() -> Unit)? = null
-        ) {
-            val alertDialog = AlertDialog.Builder(this).setTitle(title).setMessage(message)
-                .setPositiveButton(positiveButtonText) { dialog, _ ->
-                    dialog.dismiss()
-                    positiveButtonAction?.invoke()
-                }
-            if (negativeButtonText != null) {
-                alertDialog.setNegativeButton(negativeButtonText) { dialog, _ ->
-                    dialog.dismiss()
-                    negativeButtonAction?.invoke()
-                }
-            }
-            alertDialog.create().show()
-        }
-        */
     }
+
+    private fun savePlan(plan: Plan) {
+        val sharedPref = getSharedPreferences("Plans", Context.MODE_PRIVATE)
+        val editor = sharedPref.edit()
+        editor.putString("title", plan.title)
+        editor.putString("description", plan.description)
+        editor.putString("date", plan.date)
+        editor.putString("time", plan.time)
+        editor.putBoolean("isReminderChecked", plan.isReminderChecked)
+        editor.apply()
+
+        Toast.makeText(this, "Plan saved successfully", Toast.LENGTH_SHORT).show()
+        finish()
+    }
+
 }
