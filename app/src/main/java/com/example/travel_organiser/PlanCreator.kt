@@ -10,6 +10,8 @@ import android.os.Build
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.view.MotionEvent
+import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
@@ -25,8 +27,6 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 
 class PlanCreator : AppCompatActivity() {
-    private val sharedPreferencesName = "TravelPlan"
-    private val plansKey = "plansList"
 
     @RequiresApi(Build.VERSION_CODES.O)
     @SuppressLint("MissingInflatedId")
@@ -152,15 +152,44 @@ class PlanCreator : AppCompatActivity() {
     private fun savePlan(plan: Plan) {
         val sharedPref = getSharedPreferences("Plans", Context.MODE_PRIVATE)
         val editor = sharedPref.edit()
-        editor.putString("title", plan.title)
-        editor.putString("description", plan.description)
-        editor.putString("date", plan.date)
-        editor.putString("time", plan.time)
-        editor.putBoolean("isReminderChecked", plan.isReminderChecked)
+
+        // Get the existing plans list
+        val plansListJson = sharedPref.getString("plansList", "[]") ?: "[]"
+        val gson = Gson()
+        val listType = object : TypeToken<MutableList<Plan>>() {}.type
+        val plansList: MutableList<Plan> = gson.fromJson(plansListJson, listType)
+
+        // Add the new plan to the list
+        plansList.add(plan)
+
+        // Save the updated list back to SharedPreferences
+        val updatedPlansListJson = gson.toJson(plansList)
+        editor.putString("plansList", updatedPlansListJson)
         editor.apply()
 
-        Toast.makeText(this, "Plan saved successfully", Toast.LENGTH_SHORT).show()
-        finish()
+        // Return the updated plans list to MainMenu
+        val resultIntent = Intent()
+        resultIntent.putExtra("updatedPlansList", updatedPlansListJson)
+        setResult(RESULT_OK, resultIntent)
+        finish() // Finish the activity and return to MainMenu
+    }
+
+
+
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        if (event.action == MotionEvent.ACTION_DOWN) {
+            val focusedView = currentFocus
+            if (focusedView != null && focusedView is EditText) {
+                hideKeyboard(focusedView)
+                focusedView.clearFocus()
+            }
+        }
+        return super.onTouchEvent(event)
+    }
+
+    private fun hideKeyboard(editText: EditText) {
+        val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.hideSoftInputFromWindow(editText.windowToken, 0)
     }
 
 }
