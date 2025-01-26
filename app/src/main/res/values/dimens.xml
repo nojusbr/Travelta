@@ -1,4 +1,9 @@
 <resources>
-    <dimen name="fab_margin">16dp</dimen>  <!-- Keep this as is -->
-    <dimen name="recycler_item_spacing">4dp</dimen> <!-- Add this one for RecyclerView spacing -->
+    <dimen name="fab_margin">16dp</dimen>
+    <dimen name="recycler_item_spacing">4dp</dimen>
+    <dimen name="default_text_size">14sp</dimen>
+    <dimen name="button_padding">20dp</dimen>
+    <dimen name="card_padding">20dp</dimen>
+    <dimen name="card_text_size">14sp</dimen>
+    <dimen name="item_spacing">16dp</dimen>
 </resources>

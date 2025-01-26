@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -28,19 +27,15 @@
 
     </com.google.android.material.appbar.AppBarLayout>
 
-    <ScrollView
-        android:id="@+id/plansScrollView"
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/plansRecyclerView"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="80dp">
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/plansRecyclerView"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_marginTop="20dp"
-            app:layout_constraintBottom_toBottomOf="parent"/>
-    </ScrollView>
+        android:layout_height="match_parent"
+        app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="70dp"
+        android:layout_marginBottom="20dp" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab"
@@ -54,4 +49,11 @@
         app:fabSize="normal"
         app:srcCompat="@android:drawable/ic_menu_add" />
 
+    <Button
+        android:id="@+id/del_btn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Delete all plans"
+        app:layout_anchor="@+id/appBarLayout"
+        app:layout_anchorGravity="center" />
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
