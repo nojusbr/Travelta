@@ -7,7 +7,7 @@ class ItemSpacingDecoration(private val space: Int) : RecyclerView.ItemDecoratio
         super.getItemOffsets(outRect, view, parent, state)
 
         // Set equal margins on all sides of each item
-        outRect.left = space
+        outRect.left = -space + 20
         outRect.right = space
         outRect.bottom = space
 

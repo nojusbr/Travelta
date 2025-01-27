@@ -37,9 +37,11 @@ class PlansAdapter(
             val padding = context.resources.getDimensionPixelSize(R.dimen.card_padding)
 
             val cardWidth = textWidth + padding * 2
+            val minCardWidth = context.resources.getDimensionPixelSize(R.dimen.min_card_width)
+            val finalCardWidth = maxOf(cardWidth, minCardWidth)
             val layoutParams = holder.planCard.layoutParams as ViewGroup.MarginLayoutParams
-            layoutParams.width = cardWidth
-            layoutParams.setMargins(32, 32, 32, 32) // Add margins around cards
+            layoutParams.width = finalCardWidth
+            layoutParams.setMargins(-16, 0, 0, 8) // Add margins around cards
             holder.planCard.layoutParams = layoutParams
 
             // Set click listener
