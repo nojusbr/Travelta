@@ -25,9 +25,13 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import java.sql.Time
+import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.util.Date
+import java.util.Locale
 
 class PlanCreator : AppCompatActivity() {
 
@@ -65,12 +69,12 @@ class PlanCreator : AppCompatActivity() {
 
         val reminderCheckbox: CheckBox = findViewById(R.id.reminder_chkbx)
 
-        val maxChars = 120
+        val maxChars = 300
 
         // Date Picker Listener
         val datePickerDialogListener =
             DatePickerDialog.OnDateSetListener { _, year, monthOfYear, dayOfMonth ->
-                val formattedDate = "${dayOfMonth}/${monthOfYear + 1}/$year"
+                val formattedDate = "${year}/${monthOfYear + 1}/$dayOfMonth"
                 planDateTv.text = formattedDate
             }
 
@@ -96,7 +100,7 @@ class PlanCreator : AppCompatActivity() {
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 val remainingChars = maxChars - (s?.length ?: 0)
-                planLetterLimTv.text = "$remainingChars/120"
+                planLetterLimTv.text = "$remainingChars/300"
                 if (remainingChars <= 0) planLetterLimTv.setTextColor(Color.RED)
                 else planLetterLimTv.setTextColor(Color.DKGRAY)
             }
@@ -128,11 +132,10 @@ class PlanCreator : AppCompatActivity() {
             datePickerDialog.show()
         }
 
-        // Set up Back Button click listener
         backBtn.setOnClickListener {
-            val intent = Intent(this, MainMenu::class.java)
-            startActivity(intent)
+            finish()
         }
+
 
         saveBtn.setOnClickListener {
             val title = planTitleEditable.text.toString()
@@ -140,9 +143,11 @@ class PlanCreator : AppCompatActivity() {
             val date = planDateTv.text.toString()
             val time = planTimeTv.text.toString()
             val isReminderChecked = reminderCheckbox.isChecked
+            val createdDate = getCurrentDate()
+            val createdTime = getCurrentTime()
 
             if (title.isNotBlank() && description.isNotBlank() && date.isNotBlank() && time.isNotBlank()) {
-                val plan = Plan(title, description, date, time, isReminderChecked)
+                val plan = Plan(title, description, date, time, isReminderChecked, createdDate, createdTime)
                 savePlan(plan)
             } else {
                 Toast.makeText(this, "Please fill in all fields", Toast.LENGTH_SHORT).show()
@@ -156,16 +161,13 @@ class PlanCreator : AppCompatActivity() {
         val sharedPref = getSharedPreferences("Plans", Context.MODE_PRIVATE)
         val editor = sharedPref.edit()
 
-        // Get the existing plans list
         val plansListJson = sharedPref.getString("plansList", "[]") ?: "[]"
         val gson = Gson()
         val listType = object : TypeToken<MutableList<Plan>>() {}.type
         val plansList: MutableList<Plan> = gson.fromJson(plansListJson, listType)
 
-        // Add the new plan to the list
         plansList.add(plan)
 
-        // Save the updated list back to SharedPreferences
         val updatedPlansListJson = gson.toJson(plansList)
         editor.putString("plansList", updatedPlansListJson)
         editor.apply()
@@ -174,10 +176,8 @@ class PlanCreator : AppCompatActivity() {
         val resultIntent = Intent()
         resultIntent.putExtra("updatedPlansList", updatedPlansListJson)
         setResult(RESULT_OK, resultIntent)
-        finish() // Finish the activity and return to MainMenu
+        finish()
     }
-
-
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         if (event.action == MotionEvent.ACTION_DOWN) {
@@ -193,6 +193,16 @@ class PlanCreator : AppCompatActivity() {
     private fun hideKeyboard(editText: EditText) {
         val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
         imm.hideSoftInputFromWindow(editText.windowToken, 0)
+    }
+
+    private fun getCurrentTime(): String {
+        val sdf = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+        return sdf.format(Date())
+    }
+
+    private fun getCurrentDate(): String {
+        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        return sdf.format(Date())
     }
 
 }

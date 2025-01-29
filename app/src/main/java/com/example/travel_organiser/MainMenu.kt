@@ -50,6 +50,7 @@ class MainMenu : AppCompatActivity() {
 
         displayPlans()
 
+
         val backgroundColor = resources.getColor(R.color.backgroundColor)
         window.navigationBarColor = backgroundColor
         window.statusBarColor = backgroundColor

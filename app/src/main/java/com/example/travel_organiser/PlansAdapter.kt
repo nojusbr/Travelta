@@ -1,11 +1,13 @@
 package com.example.travel_organiser
 
 import android.content.Context
+import android.content.Intent
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import android.widget.Toast
 import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
 
@@ -41,13 +43,21 @@ class PlansAdapter(
             val finalCardWidth = maxOf(cardWidth, minCardWidth)
             val layoutParams = holder.planCard.layoutParams as ViewGroup.MarginLayoutParams
             layoutParams.width = finalCardWidth
-            layoutParams.setMargins(-16, 0, 0, 8) // Add margins around cards
+            layoutParams.setMargins(-20, 0, 0, 8) // Add margins around cards
             holder.planCard.layoutParams = layoutParams
 
-            // Set click listener
             holder.planCard.setOnClickListener {
-                Log.d("PlansAdapter", "Card clicked: $title")
+                val intent = Intent(context, FullPlan::class.java)
+                intent.putExtra("planTitle", currentPlan.title)
+                intent.putExtra("planDescription", currentPlan.description)
+                intent.putExtra("planDate", currentPlan.date)
+                intent.putExtra("planTime", currentPlan.time)
+                intent.putExtra("createdTime", currentPlan.createdTime)
+                intent.putExtra("createdDate", currentPlan.createdDate)
+
+                context.startActivity(intent)
             }
+
         } catch (e: Exception) {
             Log.e("PlansAdapter", "Error in onBindViewHolder", e)
         }
