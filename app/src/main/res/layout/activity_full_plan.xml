@@ -22,7 +22,7 @@
 
     <TextView
         android:id="@+id/title_tv"
-        android:layout_width="378dp"
+        android:layout_width="360dp"
         android:layout_height="51dp"
         android:layout_marginStart="24dp"
         android:layout_marginTop="72dp"
@@ -94,5 +94,25 @@
         android:text="createdTime"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/title_tv" />
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/del_btn"
+        android:layout_width="102dp"
+        android:layout_height="104dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/delete"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/edit_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/edit_square"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/del_btn" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

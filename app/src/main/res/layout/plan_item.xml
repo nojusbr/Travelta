@@ -3,54 +3,52 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:paddingStart="8dp"
-    android:paddingEnd="8dp">
+    android:padding="8dp">
 
     <androidx.cardview.widget.CardView
         android:id="@+id/plan_card"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="10dp"
+        android:layout_width="198dp"
+        android:layout_height="match_parent"
+        android:layout_margin="8dp"
         android:background="?attr/selectableItemBackground"
         android:clickable="true"
         android:focusable="true"
         android:foreground="?attr/selectableItemBackground"
-        android:minWidth="150dp"
-        android:minHeight="70dp"
-        android:padding="16dp"
-        app:cardCornerRadius="20dp"
+        android:maxWidth="150dp"
+        android:minHeight="120dp"
+        android:padding="0dp"
+        app:cardCornerRadius="12dp"
         app:cardElevation="4dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center"
+            android:gravity="center_vertical"
             android:orientation="vertical">
 
             <TextView
                 android:id="@+id/plan_title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:clickable="false"
-                android:focusable="false"
+                android:fontFamily="@font/nunito_bold"
                 android:padding="8dp"
                 android:text="Sample Title"
+                android:textAlignment="center"
                 android:textColor="@android:color/black"
-                android:textSize="20sp" />
+                android:textSize="18sp"
+                android:textStyle="bold" />
 
             <TextView
-                android:id="@+id/description_text"
+                android:id="@+id/plan_description"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_marginStart="10dp"
                 android:layout_marginTop="4dp"
-                android:clickable="false"
-                android:focusable="false"
+                android:fontFamily="@font/nunito_italic"
                 android:gravity="center"
                 android:text="Description"
                 android:textSize="14sp" />
 
         </LinearLayout>
-
     </androidx.cardview.widget.CardView>
-
 </LinearLayout>

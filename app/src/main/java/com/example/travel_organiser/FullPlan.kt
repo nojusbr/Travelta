@@ -1,15 +1,26 @@
 package com.example.travel_organiser
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.widget.Adapter
 import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.example.travel_organiser.MainMenu.Companion.REQUEST_CODE_NEW_PLAN
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 
 class FullPlan : AppCompatActivity() {
+
+    private lateinit var plansAdapter: PlansAdapter
+    private var plansList: MutableList<Plan> = mutableListOf()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -25,6 +36,7 @@ class FullPlan : AppCompatActivity() {
         window.statusBarColor = backgroundColor
 
         val backBtn: Button = findViewById(R.id.back_btn)
+        val delBtn: Button = findViewById(R.id.del_btn)
 
         val title: TextView = findViewById(R.id.title_tv)
         val description: TextView = findViewById(R.id.desc_tv)
@@ -39,6 +51,7 @@ class FullPlan : AppCompatActivity() {
         val planTime = intent.getStringExtra("planTime")
         val planCreatedTime = intent.getStringExtra("createdTime") ?: "No Time"
         val planCreatedDate = intent.getStringExtra("createdDate") ?: "No Date"
+        val position = intent.getIntExtra("position", -1)
 
         title.text = planTitle
         description.text = planDescription
@@ -51,5 +64,52 @@ class FullPlan : AppCompatActivity() {
         backBtn.setOnClickListener {
             finish()
         }
+
+        delBtn.setOnClickListener {
+            val builder: AlertDialog.Builder = AlertDialog.Builder(this)
+            builder
+                .setTitle("Delete the plan?")
+                .setMessage("Do you really want to delete this plan?")
+                .setPositiveButton("Yes") { dialog, which ->
+                    if (position != -1) {
+                        deletePlan(position)
+                        val intent = Intent(this, MainMenu::class.java)
+                        finishAffinity()
+                        startActivityForResult(intent, REQUEST_CODE_NEW_PLAN)
+                    }
+                    Toast.makeText(this, "Plan deleted", Toast.LENGTH_SHORT).show()
+                }
+                .setNegativeButton("No, save my plan!") { dialog, which ->
+                    Toast.makeText(this, "Cancelled", Toast.LENGTH_SHORT).show()
+                }
+            val dialog: AlertDialog = builder.create()
+            dialog.show()
+        }
     }
+
+    private fun deletePlan(position: Int) {
+        val sharedPref = getSharedPreferences("Plans", Context.MODE_PRIVATE)
+        val editor = sharedPref.edit()
+
+        // Retrieve the existing plans from SharedPreferences
+        val plansJson = sharedPref.getString("plansList", "[]")
+        val gson = Gson()
+        val listType = object : TypeToken<MutableList<Plan>>() {}.type
+        val plansList: MutableList<Plan> = gson.fromJson(plansJson, listType)
+
+        if (position >= 0 && position < plansList.size) {
+            // Remove the plan from the list
+            plansList.removeAt(position)
+
+            // Save the updated plans list back to SharedPreferences
+            val updatedPlansJson = gson.toJson(plansList)
+            editor.putString("plansList", updatedPlansJson)
+            editor.apply()
+
+            // Optionally, update the RecyclerView's adapter (you can pass the updated list back if needed)
+            // plansAdapter.notifyDataSetChanged()
+        }
+    }
+
+
 }

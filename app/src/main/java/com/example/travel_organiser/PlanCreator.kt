@@ -161,6 +161,7 @@ class PlanCreator : AppCompatActivity() {
         val sharedPref = getSharedPreferences("Plans", Context.MODE_PRIVATE)
         val editor = sharedPref.edit()
 
+        // Retrieve the current list of plans (defaulting to an empty list if none exists)
         val plansListJson = sharedPref.getString("plansList", "[]") ?: "[]"
         val gson = Gson()
         val listType = object : TypeToken<MutableList<Plan>>() {}.type
@@ -168,16 +169,17 @@ class PlanCreator : AppCompatActivity() {
 
         plansList.add(plan)
 
+        // Convert the updated list to JSON and save it back
         val updatedPlansListJson = gson.toJson(plansList)
         editor.putString("plansList", updatedPlansListJson)
         editor.apply()
 
-        // Return the updated plans list to MainMenu
         val resultIntent = Intent()
         resultIntent.putExtra("updatedPlansList", updatedPlansListJson)
         setResult(RESULT_OK, resultIntent)
         finish()
     }
+
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         if (event.action == MotionEvent.ACTION_DOWN) {
