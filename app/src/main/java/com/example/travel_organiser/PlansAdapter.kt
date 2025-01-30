@@ -2,22 +2,29 @@ package com.example.travel_organiser
 
 import android.content.Context
 import android.content.Intent
+import android.os.CountDownTimer
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
+import java.text.SimpleDateFormat
+import java.util.*
+import java.util.concurrent.TimeUnit
 
 class PlansAdapter(
     private val context: Context,
     private var plansList: MutableList<Plan>
 ) : RecyclerView.Adapter<PlansAdapter.PlanViewHolder>() {
 
-    inner class PlanViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    class PlanViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val planCard: CardView = itemView.findViewById(R.id.plan_card)
         val planTitle: TextView = itemView.findViewById(R.id.plan_title)
         val planDescription: TextView = itemView.findViewById(R.id.plan_description)
+        val createdTime: TextView = itemView.findViewById(R.id.plan_created_time)
+        val planTimer: TextView = itemView.findViewById(R.id.timer)
+        var countDownTimer: CountDownTimer? = null
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PlanViewHolder {
@@ -27,39 +34,86 @@ class PlansAdapter(
 
     override fun onBindViewHolder(holder: PlanViewHolder, position: Int) {
         val currentPlan = plansList[position]
-        val title = currentPlan.title.ifEmpty { "No title available" }
-        val description = currentPlan.description.ifEmpty { "No description available" }
 
-        holder.planTitle.text = title
-        holder.planDescription.text = description
+        holder.planTitle.text = currentPlan.title.ifEmpty { "No title available" }
+        holder.planDescription.text = currentPlan.description.ifEmpty { "No description available" }
+        holder.createdTime.text = "${currentPlan.createdTime} ${currentPlan.createdDate}".ifEmpty { "No time available" }
 
-        // Adjust card width to fit two columns
-        val displayMetrics = context.resources.displayMetrics
-        val screenWidth = displayMetrics.widthPixels
-        val spacing = context.resources.getDimensionPixelSize(R.dimen.item_spacing)
-        val cardWidth = (screenWidth - (3 * spacing)) / 2 // 2 columns with spacing
+        // Cancel any previous countdown
+        holder.countDownTimer?.cancel()
+        holder.planTimer.text = "Calculating..."
 
+        // Get event date-time in milliseconds
+        val finishTime = getFinishTimeInMillis(currentPlan.date, currentPlan.time)
+        val currentTime = System.currentTimeMillis()
+
+        if (finishTime > currentTime) {
+            startTimer(holder, finishTime)
+        } else {
+            holder.planTimer.text = "Finished"
+        }
+
+        // Adjust CardView width dynamically
         val layoutParams = holder.planCard.layoutParams as ViewGroup.MarginLayoutParams
-        layoutParams.width = cardWidth
-        layoutParams.setMargins(0, 0, 0, 8) // Add margins around cards
+        layoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT
+        layoutParams.setMargins(0, 0, 0, 150) // Spacing between cards
         holder.planCard.layoutParams = layoutParams
 
+        // Handle card click to open details
         holder.planCard.setOnClickListener {
-            val intent = Intent(context, FullPlan::class.java)
-            intent.putExtra("planTitle", currentPlan.title)
-            intent.putExtra("planDescription", currentPlan.description)
-            intent.putExtra("planDate", currentPlan.date)
-            intent.putExtra("planTime", currentPlan.time)
-            intent.putExtra("createdTime", currentPlan.createdTime)
-            intent.putExtra("createdDate", currentPlan.createdDate)
-            intent.putExtra("position", position)
+            val intent = Intent(context, FullPlan::class.java).apply {
+                putExtra("planTitle", currentPlan.title)
+                putExtra("planDescription", currentPlan.description)
+                putExtra("planDate", currentPlan.date)
+                putExtra("planTime", currentPlan.time)
+                putExtra("createdTime", currentPlan.createdTime)
+                putExtra("createdDate", currentPlan.createdDate)
+                putExtra("position", position)
+            }
             context.startActivity(intent)
         }
     }
 
     override fun getItemCount(): Int = plansList.size
 
-    // Method to update the list of plans
+    private fun startTimer(holder: PlanViewHolder, finishTime: Long) {
+        val currentTime = System.currentTimeMillis()
+        val timeLeft = finishTime - currentTime
+
+        holder.countDownTimer = object : CountDownTimer(timeLeft, 1000) {
+            override fun onTick(millisUntilFinished: Long) {
+                val days = TimeUnit.MILLISECONDS.toDays(millisUntilFinished)
+                val hours = TimeUnit.MILLISECONDS.toHours(millisUntilFinished) % 24
+                val minutes = TimeUnit.MILLISECONDS.toMinutes(millisUntilFinished) % 60
+                val seconds = TimeUnit.MILLISECONDS.toSeconds(millisUntilFinished) % 60
+
+                holder.planTimer.text = when {
+                    days > 0 -> "${days}d ${hours}h ${minutes}m"
+                    hours > 0 -> "${hours}h ${minutes}m ${seconds}s"
+                    minutes > 0 -> "${minutes}m ${seconds}s"
+                    else -> "${seconds}s"
+                }
+            }
+
+            override fun onFinish() {
+                holder.planTimer.text = "Finished"
+            }
+        }.start()
+    }
+
+    private fun getFinishTimeInMillis(date: String, time: String): Long {
+        return try {
+            val dateFormat = SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.getDefault()) // Adjust format based on your stored date format
+            val dateTimeString = "$date $time"
+            val parsedDate = dateFormat.parse(dateTimeString)
+
+            parsedDate?.time ?: 0L
+        } catch (e: Exception) {
+            e.printStackTrace()
+            0L
+        }
+    }
+
     fun updatePlans(newPlansList: MutableList<Plan>) {
         plansList = newPlansList
         notifyDataSetChanged()

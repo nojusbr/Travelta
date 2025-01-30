@@ -12,12 +12,7 @@ import android.text.Editable
 import android.text.TextWatcher
 import android.view.MotionEvent
 import android.view.inputmethod.InputMethodManager
-import android.widget.Button
-import android.widget.CheckBox
-import android.widget.EditText
-import android.widget.TextView
-import android.widget.TimePicker
-import android.widget.Toast
+import android.widget.*
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
@@ -26,10 +21,13 @@ import androidx.core.view.WindowInsetsCompat
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import java.util.*
 
 class PlanCreator : AppCompatActivity() {
+
+    private lateinit var planDateTv: TextView
+    private lateinit var planTimeTv: TextView
+    private var selectedDate: Calendar = Calendar.getInstance()
 
     @RequiresApi(Build.VERSION_CODES.O)
     @SuppressLint("MissingInflatedId")
@@ -56,96 +54,77 @@ class PlanCreator : AppCompatActivity() {
         val dateBtn: Button = findViewById(R.id.plan_date_btn)
         val saveBtn: Button = findViewById(R.id.save_plan_btn)
 
-        val planTimeTv: TextView = findViewById(R.id.plan_time_tv)
-        val planDateTv: TextView = findViewById(R.id.plan_date_tv)
+        planTimeTv = findViewById(R.id.plan_time_tv)
+        planDateTv = findViewById(R.id.plan_date_tv)
         val planLetterLimTv: TextView = findViewById(R.id.plan_letterLim_tv)
 
         val planTitleEditable: EditText = findViewById(R.id.plan_title_edt)
         val planDescEditable: EditText = findViewById(R.id.plan_desc_edt)
-
         val reminderCheckbox: CheckBox = findViewById(R.id.reminder_chkbx)
 
         val maxChars = 300
 
-        // Date Picker Listener
-        val datePickerDialogListener =
-            DatePickerDialog.OnDateSetListener { _, year, monthOfYear, dayOfMonth ->
-                val formattedDate = "${year}/${monthOfYear + 1}/$dayOfMonth"
-                planDateTv.text = formattedDate
-            }
+        // Date Picker
+        dateBtn.setOnClickListener {
+            val calendar = Calendar.getInstance()
+            val year = calendar.get(Calendar.YEAR)
+            val month = calendar.get(Calendar.MONTH)
+            val day = calendar.get(Calendar.DAY_OF_MONTH)
 
-        val position = intent.getIntExtra("position", -1) // -1 means new plan
-        if (position != -1) {
-            // Edit existing plan, populate the fields with the current data
-            val planTitle = intent.getStringExtra("title")
-            val planDescription = intent.getStringExtra("description")
-            val planTime = intent.getStringExtra("time")
-            val planDate = intent.getStringExtra("date")
-
-            planTitleEditable.setText(planTitle)
-            planDescEditable.setText(planDescription)
-            planTimeTv.text = planTime
-            planDateTv.text = planDate
+            val datePickerDialog = DatePickerDialog(
+                this,
+                { _, selectedYear, selectedMonth, selectedDay ->
+                    selectedDate.set(selectedYear, selectedMonth, selectedDay)
+                    val formattedDate = "$selectedYear/${selectedMonth + 1}/$selectedDay"
+                    planDateTv.text = formattedDate
+                },
+                year,
+                month,
+                day
+            )
+            datePickerDialog.datePicker.minDate = System.currentTimeMillis() // Prevents past dates
+            datePickerDialog.show()
         }
 
-        // Time Picker Listener
-        val timePickerDialogListener: TimePickerDialog.OnTimeSetListener =
-            object : TimePickerDialog.OnTimeSetListener {
-                override fun onTimeSet(view: TimePicker?, hourOfDay: Int, minute: Int) {
-                    val formattedTime: String = when {
-                        minute < 10 -> {
-                            "${hourOfDay}:0${minute}"
-                        }
+        // Time Picker
+        timeBtn.setOnClickListener {
+            val currentTime = Calendar.getInstance()
+            val currentHour = currentTime.get(Calendar.HOUR_OF_DAY)
+            val currentMinute = currentTime.get(Calendar.MINUTE)
 
-                        else -> {
-                            "${hourOfDay}:${minute}"
-                        }
+            val isToday = isSameDay(selectedDate, currentTime)
+
+            val timePickerDialog = TimePickerDialog(
+                this,
+                { _, hourOfDay, minute ->
+                    if (isToday && (hourOfDay < currentHour || (hourOfDay == currentHour && minute < currentMinute))) {
+                        Toast.makeText(this, "Cannot select a past time", Toast.LENGTH_SHORT).show()
+                    } else {
+                        planTimeTv.text = String.format("%02d:%02d", hourOfDay, minute)
                     }
-                    planTimeTv.text = formattedTime
-                }
-            }
+                },
+                currentHour,
+                currentMinute,
+                true
+            )
 
+            timePickerDialog.show()
+        }
+
+        // Character Limit for Description
         planDescEditable.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 val remainingChars = maxChars - (s?.length ?: 0)
                 planLetterLimTv.text = "$remainingChars/300"
-                if (remainingChars <= 0) planLetterLimTv.setTextColor(Color.RED)
-                else planLetterLimTv.setTextColor(Color.DKGRAY)
+                planLetterLimTv.setTextColor(if (remainingChars <= 0) Color.RED else Color.DKGRAY)
             }
 
             override fun afterTextChanged(s: Editable?) {}
         })
 
-        // Set up Time Button click listener
-        timeBtn.setOnClickListener {
-            val timePicker: TimePickerDialog =
-                TimePickerDialog(this, timePickerDialogListener, 12, 10, true)
-            timePicker.show()
-        }
-
-        // Set up Date Button click listener
-        dateBtn.setOnClickListener {
-            val calendar = java.util.Calendar.getInstance()
-            val year = calendar.get(java.util.Calendar.YEAR)
-            val month = calendar.get(java.util.Calendar.MONTH)
-            val day = calendar.get(java.util.Calendar.DAY_OF_MONTH)
-
-            val datePickerDialog = DatePickerDialog(
-                this,
-                datePickerDialogListener,
-                year,
-                month,
-                day
-            )
-            datePickerDialog.show()
-        }
-
-        backBtn.setOnClickListener {
-            finish()
-        }
-
+        backBtn.setOnClickListener { finish() }
 
         saveBtn.setOnClickListener {
             val title = planTitleEditable.text.toString()
@@ -157,58 +136,46 @@ class PlanCreator : AppCompatActivity() {
             val createdTime = getCurrentTime()
 
             if (title.isNotBlank() && description.isNotBlank() && date.isNotBlank() && time.isNotBlank()) {
-                val plan = Plan(
-                    title,
-                    description,
-                    date,
-                    time,
-                    isReminderChecked,
-                    createdDate,
-                    createdTime
-                )
-                savePlan(plan, position) // Pass position here
+                val plan = Plan(title, description, date, time, isReminderChecked, createdDate, createdTime)
+                savePlan(plan)
             } else {
                 Toast.makeText(this, "Please fill in all fields", Toast.LENGTH_SHORT).show()
             }
         }
-
     }
 
-    private fun savePlan(plan: Plan, position: Int) {
+    private fun isSameDay(cal1: Calendar, cal2: Calendar): Boolean {
+        return cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
+                cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR)
+    }
+
+    private fun savePlan(plan: Plan) {
         val sharedPref = getSharedPreferences("Plans", Context.MODE_PRIVATE)
         val editor = sharedPref.edit()
 
-        // Retrieve existing plans
         val plansJson = sharedPref.getString("plansList", "[]")
         val gson = Gson()
         val listType = object : TypeToken<MutableList<Plan>>() {}.type
         val plansList: MutableList<Plan> = gson.fromJson(plansJson, listType)
 
-        if (position != -1) {
-            plansList[position] = plan
-        } else {
-            plansList.add(plan)
-        }
+        plansList.add(plan)
 
-        // Save updated list to SharedPreferences
         val updatedPlansJson = gson.toJson(plansList)
         editor.putString("plansList", updatedPlansJson)
         editor.apply()
 
-        // Send result back
         val resultIntent = Intent()
         resultIntent.putExtra("updatedPlansList", updatedPlansJson)
         setResult(RESULT_OK, resultIntent)
-        val intent = Intent(this, MainMenu::class.java)
-        startActivity(intent)
+
+        startActivity(Intent(this, MainMenu::class.java))
         finish()
     }
-
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         if (event.action == MotionEvent.ACTION_DOWN) {
             val focusedView = currentFocus
-            if (focusedView != null && focusedView is EditText) {
+            if (focusedView is EditText) {
                 hideKeyboard(focusedView)
                 focusedView.clearFocus()
             }
@@ -230,5 +197,4 @@ class PlanCreator : AppCompatActivity() {
         val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
         return sdf.format(Date())
     }
-
 }
