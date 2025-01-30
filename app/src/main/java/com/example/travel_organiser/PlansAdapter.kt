@@ -2,12 +2,10 @@ package com.example.travel_organiser
 
 import android.content.Context
 import android.content.Intent
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
-import android.widget.Toast
 import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
 
@@ -30,7 +28,7 @@ class PlansAdapter(
     override fun onBindViewHolder(holder: PlanViewHolder, position: Int) {
         val currentPlan = plansList[position]
         val title = currentPlan.title.ifEmpty { "No title available" }
-        val description = currentPlan.description.ifEmpty { "No title available" }
+        val description = currentPlan.description.ifEmpty { "No description available" }
 
         holder.planTitle.text = title
         holder.planDescription.text = description
@@ -60,4 +58,10 @@ class PlansAdapter(
     }
 
     override fun getItemCount(): Int = plansList.size
+
+    // Method to update the list of plans
+    fun updatePlans(newPlansList: MutableList<Plan>) {
+        plansList = newPlansList
+        notifyDataSetChanged()
+    }
 }

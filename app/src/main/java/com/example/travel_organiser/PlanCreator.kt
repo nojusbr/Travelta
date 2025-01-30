@@ -25,11 +25,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import java.sql.Time
 import java.text.SimpleDateFormat
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.LocalTime
 import java.util.Date
 import java.util.Locale
 
@@ -77,6 +73,20 @@ class PlanCreator : AppCompatActivity() {
                 val formattedDate = "${year}/${monthOfYear + 1}/$dayOfMonth"
                 planDateTv.text = formattedDate
             }
+
+        val position = intent.getIntExtra("position", -1) // -1 means new plan
+        if (position != -1) {
+            // Edit existing plan, populate the fields with the current data
+            val planTitle = intent.getStringExtra("title")
+            val planDescription = intent.getStringExtra("description")
+            val planTime = intent.getStringExtra("time")
+            val planDate = intent.getStringExtra("date")
+
+            planTitleEditable.setText(planTitle)
+            planDescEditable.setText(planDescription)
+            planTimeTv.text = planTime
+            planDateTv.text = planDate
+        }
 
         // Time Picker Listener
         val timePickerDialogListener: TimePickerDialog.OnTimeSetListener =
@@ -147,36 +157,50 @@ class PlanCreator : AppCompatActivity() {
             val createdTime = getCurrentTime()
 
             if (title.isNotBlank() && description.isNotBlank() && date.isNotBlank() && time.isNotBlank()) {
-                val plan = Plan(title, description, date, time, isReminderChecked, createdDate, createdTime)
-                savePlan(plan)
+                val plan = Plan(
+                    title,
+                    description,
+                    date,
+                    time,
+                    isReminderChecked,
+                    createdDate,
+                    createdTime
+                )
+                savePlan(plan, position) // Pass position here
             } else {
                 Toast.makeText(this, "Please fill in all fields", Toast.LENGTH_SHORT).show()
             }
-
         }
 
     }
 
-    private fun savePlan(plan: Plan) {
+    private fun savePlan(plan: Plan, position: Int) {
         val sharedPref = getSharedPreferences("Plans", Context.MODE_PRIVATE)
         val editor = sharedPref.edit()
 
-        // Retrieve the current list of plans (defaulting to an empty list if none exists)
-        val plansListJson = sharedPref.getString("plansList", "[]") ?: "[]"
+        // Retrieve existing plans
+        val plansJson = sharedPref.getString("plansList", "[]")
         val gson = Gson()
         val listType = object : TypeToken<MutableList<Plan>>() {}.type
-        val plansList: MutableList<Plan> = gson.fromJson(plansListJson, listType)
+        val plansList: MutableList<Plan> = gson.fromJson(plansJson, listType)
 
-        plansList.add(plan)
+        if (position != -1) {
+            plansList[position] = plan
+        } else {
+            plansList.add(plan)
+        }
 
-        // Convert the updated list to JSON and save it back
-        val updatedPlansListJson = gson.toJson(plansList)
-        editor.putString("plansList", updatedPlansListJson)
+        // Save updated list to SharedPreferences
+        val updatedPlansJson = gson.toJson(plansList)
+        editor.putString("plansList", updatedPlansJson)
         editor.apply()
 
+        // Send result back
         val resultIntent = Intent()
-        resultIntent.putExtra("updatedPlansList", updatedPlansListJson)
+        resultIntent.putExtra("updatedPlansList", updatedPlansJson)
         setResult(RESULT_OK, resultIntent)
+        val intent = Intent(this, MainMenu::class.java)
+        startActivity(intent)
         finish()
     }
 

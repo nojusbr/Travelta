@@ -3,11 +3,9 @@ package com.example.travel_organiser
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.widget.Adapter
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -18,25 +16,20 @@ import com.google.gson.reflect.TypeToken
 
 class FullPlan : AppCompatActivity() {
 
-    private lateinit var plansAdapter: PlansAdapter
-    private var plansList: MutableList<Plan> = mutableListOf()
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContentView(R.layout.activity_full_plan)
+
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
 
-        val backgroundColor = resources.getColor(R.color.backgroundColor)
-        window.navigationBarColor = backgroundColor
-        window.statusBarColor = backgroundColor
-
+        // Set up views
         val backBtn: Button = findViewById(R.id.back_btn)
         val delBtn: Button = findViewById(R.id.del_btn)
+        val editBtn: Button = findViewById(R.id.edit_btn)
 
         val title: TextView = findViewById(R.id.title_tv)
         val description: TextView = findViewById(R.id.desc_tv)
@@ -53,6 +46,7 @@ class FullPlan : AppCompatActivity() {
         val planCreatedDate = intent.getStringExtra("createdDate") ?: "No Date"
         val position = intent.getIntExtra("position", -1)
 
+        // Set the plan details
         title.text = planTitle
         description.text = planDescription
         date.text = planDate
@@ -60,8 +54,10 @@ class FullPlan : AppCompatActivity() {
         createdDate.text = planCreatedDate
         createdTime.text = planCreatedTime
 
-
         backBtn.setOnClickListener {
+            val intent = Intent(this, MainMenu::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
+            startActivity(intent)
             finish()
         }
 
@@ -74,8 +70,8 @@ class FullPlan : AppCompatActivity() {
                     if (position != -1) {
                         deletePlan(position)
                         val intent = Intent(this, MainMenu::class.java)
-                        finishAffinity()
-                        startActivityForResult(intent, REQUEST_CODE_NEW_PLAN)
+                        startActivity(intent)
+                        finish()
                     }
                     Toast.makeText(this, "Plan deleted", Toast.LENGTH_SHORT).show()
                 }
@@ -84,6 +80,17 @@ class FullPlan : AppCompatActivity() {
                 }
             val dialog: AlertDialog = builder.create()
             dialog.show()
+        }
+
+        editBtn.setOnClickListener {
+            val intent = Intent(this, PlanCreator::class.java)
+            intent.putExtra("title", planTitle)
+            intent.putExtra("description", planDescription)
+            intent.putExtra("time", planTime)
+            intent.putExtra("date", planDate)
+            intent.putExtra("position", position)
+            startActivity(intent)
+            finish()
         }
     }
 
@@ -105,11 +112,6 @@ class FullPlan : AppCompatActivity() {
             val updatedPlansJson = gson.toJson(plansList)
             editor.putString("plansList", updatedPlansJson)
             editor.apply()
-
-            // Optionally, update the RecyclerView's adapter (you can pass the updated list back if needed)
-            // plansAdapter.notifyDataSetChanged()
         }
     }
-
-
 }
