@@ -168,8 +168,11 @@ class PlanCreator : AppCompatActivity() {
         resultIntent.putExtra("updatedPlansList", updatedPlansJson)
         setResult(RESULT_OK, resultIntent)
 
-        startActivity(Intent(this, MainMenu::class.java))
-        finish()
+        // Clear the activity stack and go to MainMenu
+        val intent = Intent(this, MainMenu::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP // Clears the activity stack
+        startActivity(intent)
+        finish() // Finish the current PlanCreator activity
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
@@ -198,3 +201,4 @@ class PlanCreator : AppCompatActivity() {
         return sdf.format(Date())
     }
 }
+

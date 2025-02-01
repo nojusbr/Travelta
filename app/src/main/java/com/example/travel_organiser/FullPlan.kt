@@ -2,6 +2,7 @@ package com.example.travel_organiser
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
@@ -16,6 +17,8 @@ import com.google.gson.reflect.TypeToken
 
 class FullPlan : AppCompatActivity() {
 
+    private var isPlanDeleted = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_full_plan)
@@ -25,6 +28,12 @@ class FullPlan : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+
+        val backgroundColor = resources.getColor(R.color.backgroundColor)
+        window.navigationBarColor = backgroundColor
+        window.statusBarColor = backgroundColor
+        window.decorView.systemUiVisibility = 0
+
 
         // Set up views
         val backBtn: Button = findViewById(R.id.back_btn)
@@ -46,7 +55,6 @@ class FullPlan : AppCompatActivity() {
         val planCreatedDate = intent.getStringExtra("createdDate") ?: "No Date"
         val position = intent.getIntExtra("position", -1)
 
-        // Set the plan details
         title.text = planTitle
         description.text = planDescription
         date.text = planDate
@@ -69,7 +77,9 @@ class FullPlan : AppCompatActivity() {
                 .setPositiveButton("Yes") { dialog, which ->
                     if (position != -1) {
                         deletePlan(position)
+                        isPlanDeleted = true // Mark as deleted
                         val intent = Intent(this, MainMenu::class.java)
+                        intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP // Clear the activity stack
                         startActivity(intent)
                         finish()
                     }
@@ -94,11 +104,11 @@ class FullPlan : AppCompatActivity() {
         }
     }
 
+
     private fun deletePlan(position: Int) {
         val sharedPref = getSharedPreferences("Plans", Context.MODE_PRIVATE)
         val editor = sharedPref.edit()
 
-        // Retrieve the existing plans from SharedPreferences
         val plansJson = sharedPref.getString("plansList", "[]")
         val gson = Gson()
         val listType = object : TypeToken<MutableList<Plan>>() {}.type
@@ -112,6 +122,15 @@ class FullPlan : AppCompatActivity() {
             val updatedPlansJson = gson.toJson(plansList)
             editor.putString("plansList", updatedPlansJson)
             editor.apply()
+
+            // Send the updated list back to MainMenu to update the adapter
+            val intent = Intent(this, MainMenu::class.java).apply {
+                putExtra("updatedPlansList", updatedPlansJson)
+            }
+            intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP // Ensure the back stack is cleared
+            startActivity(intent)
+            finish()
         }
     }
 }
+

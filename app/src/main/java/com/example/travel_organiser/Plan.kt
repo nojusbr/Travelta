@@ -5,7 +5,7 @@ data class Plan(
     val description: String,
     val date: String,
     val time: String,
-    val isReminderChecked: Boolean,
+    var isReminderChecked: Boolean,
     val createdTime: String,
     val createdDate: String
 )

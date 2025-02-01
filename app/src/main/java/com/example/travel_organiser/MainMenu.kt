@@ -1,15 +1,22 @@
 package com.example.travel_organiser
 
 import ItemSpacingDecoration
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
 import android.graphics.Typeface
+import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.isInvisible
 import androidx.recyclerview.widget.GridLayoutManager
@@ -52,15 +59,16 @@ class MainMenu : AppCompatActivity() {
         plansRecyclerView.clipToPadding = false
         plansRecyclerView.clipChildren = false
 
-        displayPlans()
-
         val backgroundColor = resources.getColor(R.color.backgroundColor)
         window.navigationBarColor = backgroundColor
         window.statusBarColor = backgroundColor
+        window.decorView.systemUiVisibility = 0
 
         setSupportActionBar(binding.toolbarTop)
 
-        val customFont: Typeface? = ResourcesCompat.getFont(this, R.font.nunito_bolditalic)
+        //call functions
+        displayPlans()
+
 
         binding.fab.setOnClickListener {
             val intent = Intent(this, PlanCreator::class.java)
@@ -83,27 +91,22 @@ class MainMenu : AppCompatActivity() {
     @Deprecated("Deprecated in Java") // ?? no idea what this does but wtv
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+
         if (requestCode == REQUEST_CODE_NEW_PLAN && resultCode == RESULT_OK) {
+            // Retrieve the updated plans list from the intent
             val updatedPlansListJson = data?.getStringExtra("updatedPlansList")
-            val gson = Gson()
-            val listType = object : TypeToken<MutableList<Plan>>() {}.type
-            val updatedPlansList: MutableList<Plan> = gson.fromJson(updatedPlansListJson, listType)
-            plansList.clear()
-            plansList.addAll(updatedPlansList)
-            plansAdapter.notifyDataSetChanged()
+
+            updatedPlansListJson?.let {
+                // Convert the JSON string to a MutableList<Plan> using Gson
+                val gson = Gson()
+                val listType = object : TypeToken<MutableList<Plan>>() {}.type
+                val updatedPlansList: MutableList<Plan> = gson.fromJson(it, listType)
+
+                // Update the current plans list and refresh the adapter
+                plansList.clear()
+                plansList.addAll(updatedPlansList)
+                plansAdapter.notifyDataSetChanged()  // Notify the adapter that the data has changed
+            }
         }
-    }
-
-    fun savePlanToPrefs(newPlan: Plan) {
-        val sharedPref = getSharedPreferences("Plans", Context.MODE_PRIVATE)
-        val editor = sharedPref.edit()
-        val position = plansList.size
-        plansList.add(newPlan)
-        val gson = Gson()
-        val json = gson.toJson(plansList)
-        editor.putString("plansList", json)
-        editor.apply()
-        plansAdapter.notifyItemInserted(position)
-
     }
 }

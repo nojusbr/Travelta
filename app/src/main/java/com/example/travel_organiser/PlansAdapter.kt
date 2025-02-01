@@ -1,13 +1,18 @@
 package com.example.travel_organiser
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.CountDownTimer
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.cardview.widget.CardView
+import androidx.core.app.NotificationCompat
 import androidx.recyclerview.widget.RecyclerView
 import java.text.SimpleDateFormat
 import java.util.*
@@ -34,21 +39,21 @@ class PlansAdapter(
 
     override fun onBindViewHolder(holder: PlanViewHolder, position: Int) {
         val currentPlan = plansList[position]
+        createNotificationChannel(context)
 
         holder.planTitle.text = currentPlan.title.ifEmpty { "No title available" }
         holder.planDescription.text = currentPlan.description.ifEmpty { "No description available" }
-        holder.createdTime.text = "${currentPlan.createdTime} ${currentPlan.createdDate}".ifEmpty { "No time available" }
+        holder.createdTime.text =
+            "${currentPlan.createdTime} ${currentPlan.createdDate}".ifEmpty { "No time available" }
 
-        // Cancel any previous countdown
         holder.countDownTimer?.cancel()
         holder.planTimer.text = "Calculating..."
 
-        // Get event date-time in milliseconds
         val finishTime = getFinishTimeInMillis(currentPlan.date, currentPlan.time)
         val currentTime = System.currentTimeMillis()
 
         if (finishTime > currentTime) {
-            startTimer(holder, finishTime)
+            startTimer(holder, finishTime, currentPlan.isReminderChecked)
         } else {
             holder.planTimer.text = "Finished"
         }
@@ -69,6 +74,7 @@ class PlansAdapter(
                 putExtra("createdTime", currentPlan.createdTime)
                 putExtra("createdDate", currentPlan.createdDate)
                 putExtra("position", position)
+                putExtra("reminder", currentPlan.isReminderChecked)
             }
             context.startActivity(intent)
         }
@@ -76,9 +82,11 @@ class PlansAdapter(
 
     override fun getItemCount(): Int = plansList.size
 
-    private fun startTimer(holder: PlanViewHolder, finishTime: Long) {
+    private fun startTimer(holder: PlanViewHolder, finishTime: Long, isReminderChecked: Boolean) {
         val currentTime = System.currentTimeMillis()
         val timeLeft = finishTime - currentTime
+
+        var isReminderSent = false
 
         holder.countDownTimer = object : CountDownTimer(timeLeft, 1000) {
             override fun onTick(millisUntilFinished: Long) {
@@ -86,6 +94,11 @@ class PlansAdapter(
                 val hours = TimeUnit.MILLISECONDS.toHours(millisUntilFinished) % 24
                 val minutes = TimeUnit.MILLISECONDS.toMinutes(millisUntilFinished) % 60
                 val seconds = TimeUnit.MILLISECONDS.toSeconds(millisUntilFinished) % 60
+
+                if (!isReminderSent && isReminderChecked && hours < 1 && days <= 0) {
+                    showReminder(context)
+                    isReminderSent = true
+                }
 
                 holder.planTimer.text = when {
                     days > 0 -> "${days}d ${hours}h ${minutes}m"
@@ -103,7 +116,10 @@ class PlansAdapter(
 
     private fun getFinishTimeInMillis(date: String, time: String): Long {
         return try {
-            val dateFormat = SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.getDefault()) // Adjust format based on your stored date format
+            val dateFormat = SimpleDateFormat(
+                "yyyy/MM/dd HH:mm",
+                Locale.getDefault()
+            ) // Adjust format based on your stored date format
             val dateTimeString = "$date $time"
             val parsedDate = dateFormat.parse(dateTimeString)
 
@@ -114,8 +130,42 @@ class PlansAdapter(
         }
     }
 
-    fun updatePlans(newPlansList: MutableList<Plan>) {
-        plansList = newPlansList
-        notifyDataSetChanged()
+    fun showReminder(context: Context) {
+        val channelId = "my_channel_id"
+        val notificationId = 1
+
+        // Intent to open MainActivity when clicked
+        val intent = Intent(context, MainMenu::class.java)
+        val pendingIntent = PendingIntent.getActivity(
+            context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        // Build the notification
+        val notification = NotificationCompat.Builder(context, channelId)
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setContentTitle("1 hour left")
+            .setContentText("1 hour left until the on the plan")
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .build()
+
+        // Show the notification
+        val notificationManager =
+            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.notify(notificationId, notification)
+    }
+
+    fun createNotificationChannel(context: Context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channelId = "my_channel_id"
+            val channelName = "My Channel"
+            val importance = NotificationManager.IMPORTANCE_DEFAULT
+            val channel = NotificationChannel(channelId, channelName, importance)
+
+            val notificationManager: NotificationManager =
+                context.getSystemService(NotificationManager::class.java)
+            notificationManager.createNotificationChannel(channel)
+        }
     }
 }
+
