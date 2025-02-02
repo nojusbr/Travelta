@@ -1,9 +1,11 @@
 package com.example.travel_organiser
 
+import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
+import android.util.Log
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
@@ -34,7 +36,6 @@ class FullPlan : AppCompatActivity() {
         window.statusBarColor = backgroundColor
         window.decorView.systemUiVisibility = 0
 
-
         // Set up views
         val backBtn: Button = findViewById(R.id.back_btn)
         val delBtn: Button = findViewById(R.id.del_btn)
@@ -61,6 +62,16 @@ class FullPlan : AppCompatActivity() {
         time.text = planTime
         createdDate.text = planCreatedDate
         createdTime.text = planCreatedTime
+
+        val planIdExtra = intent.getStringExtra("planId")
+        val planTitleExtra = intent.getStringExtra("planTitle")
+
+        if (planIdExtra != null && planTitleExtra != null) {
+            Log.d("FullPlan", "Received planId: $planIdExtra, planTitle: $planTitle")
+            title.text = planTitle
+        } else {
+            Log.e("FullPlan", "Failed to retrieve planId or planTitle")
+        }
 
         backBtn.setOnClickListener {
             val intent = Intent(this, MainMenu::class.java)
@@ -115,15 +126,17 @@ class FullPlan : AppCompatActivity() {
         val plansList: MutableList<Plan> = gson.fromJson(plansJson, listType)
 
         if (position >= 0 && position < plansList.size) {
-            // Remove the plan from the list
+            val planId = plansList[position].planId
+
             plansList.removeAt(position)
 
-            // Save the updated plans list back to SharedPreferences
             val updatedPlansJson = gson.toJson(plansList)
             editor.putString("plansList", updatedPlansJson)
             editor.apply()
 
-            // Send the updated list back to MainMenu to update the adapter
+            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.cancel(planId.hashCode())
+
             val intent = Intent(this, MainMenu::class.java).apply {
                 putExtra("updatedPlansList", updatedPlansJson)
             }
@@ -132,5 +145,6 @@ class FullPlan : AppCompatActivity() {
             finish()
         }
     }
+
 }
 

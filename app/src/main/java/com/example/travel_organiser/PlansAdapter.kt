@@ -1,12 +1,15 @@
 package com.example.travel_organiser
 
+import NotificationWorker
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.os.Bundle
 import android.os.CountDownTimer
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -14,6 +17,10 @@ import android.widget.TextView
 import androidx.cardview.widget.CardView
 import androidx.core.app.NotificationCompat
 import androidx.recyclerview.widget.RecyclerView
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.workDataOf
+import androidx.work.WorkManager
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -39,7 +46,6 @@ class PlansAdapter(
 
     override fun onBindViewHolder(holder: PlanViewHolder, position: Int) {
         val currentPlan = plansList[position]
-        createNotificationChannel(context)
 
         holder.planTitle.text = currentPlan.title.ifEmpty { "No title available" }
         holder.planDescription.text = currentPlan.description.ifEmpty { "No description available" }
@@ -53,7 +59,13 @@ class PlansAdapter(
         val currentTime = System.currentTimeMillis()
 
         if (finishTime > currentTime) {
-            startTimer(holder, finishTime, currentPlan.isReminderChecked)
+            startTimer(
+                holder,
+                finishTime,
+                currentPlan.isReminderChecked,
+                currentPlan.planId,
+                currentPlan.title  // Pass planTitle here
+            )
         } else {
             holder.planTimer.text = "Finished"
         }
@@ -80,9 +92,16 @@ class PlansAdapter(
         }
     }
 
+
     override fun getItemCount(): Int = plansList.size
 
-    private fun startTimer(holder: PlanViewHolder, finishTime: Long, isReminderChecked: Boolean) {
+    private fun startTimer(
+        holder: PlanViewHolder,
+        finishTime: Long,
+        isReminderChecked: Boolean,
+        planId: String,
+        planTitle: String
+    ) {
         val currentTime = System.currentTimeMillis()
         val timeLeft = finishTime - currentTime
 
@@ -95,16 +114,22 @@ class PlansAdapter(
                 val minutes = TimeUnit.MILLISECONDS.toMinutes(millisUntilFinished) % 60
                 val seconds = TimeUnit.MILLISECONDS.toSeconds(millisUntilFinished) % 60
 
+
                 if (!isReminderSent && isReminderChecked && hours < 1 && days <= 0) {
-                    showReminder(context)
+                    scheduleNotification(
+                        context,
+                        planId,
+                        finishTime,
+                        planTitle
+                    )
                     isReminderSent = true
                 }
 
                 holder.planTimer.text = when {
-                    days > 0 -> "${days}d ${hours}h ${minutes}m"
-                    hours > 0 -> "${hours}h ${minutes}m ${seconds}s"
-                    minutes > 0 -> "${minutes}m ${seconds}s"
-                    else -> "${seconds}s"
+                    days > 0 -> "$days days $hours hr $minutes min"
+                    hours > 0 -> "$hours hr $minutes min"
+                    minutes > 0 -> "$minutes min"
+                    else -> "$seconds s"
                 }
             }
 
@@ -130,42 +155,31 @@ class PlansAdapter(
         }
     }
 
-    fun showReminder(context: Context) {
-        val channelId = "my_channel_id"
-        val notificationId = 1
 
-        // Intent to open MainActivity when clicked
-        val intent = Intent(context, MainMenu::class.java)
-        val pendingIntent = PendingIntent.getActivity(
-            context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
+    private fun scheduleNotification(context: Context, planId: String, finishTime: Long, planTitle: String) {
+        val sharedPreferences = context.getSharedPreferences("notification_prefs", Context.MODE_PRIVATE)
+        val hasShownNotification = sharedPreferences.getBoolean("notification_shown_$planId", false)
 
-        // Build the notification
-        val notification = NotificationCompat.Builder(context, channelId)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentTitle("1 hour left")
-            .setContentText("1 hour left until the on the plan")
-            .setContentIntent(pendingIntent)
-            .setAutoCancel(true)
+        if (hasShownNotification) return
+
+        val reminderTime = finishTime - TimeUnit.HOURS.toMillis(1)  // 1 hour before the event
+
+        val workRequest = OneTimeWorkRequestBuilder<NotificationWorker>()
+            .setInitialDelay(reminderTime - System.currentTimeMillis(), TimeUnit.MILLISECONDS)
+            .setInputData(workDataOf("planId" to planId, "planTitle" to planTitle))
             .build()
 
-        // Show the notification
-        val notificationManager =
-            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.notify(notificationId, notification)
+        WorkManager.getInstance(context).enqueueUniqueWork(
+            "notification_$planId",
+            ExistingWorkPolicy.REPLACE,
+            workRequest
+        )
+
+        val editor = sharedPreferences.edit()
+        editor.putBoolean("notification_shown_$planId", true)
+        editor.apply()
     }
 
-    fun createNotificationChannel(context: Context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channelId = "my_channel_id"
-            val channelName = "My Channel"
-            val importance = NotificationManager.IMPORTANCE_DEFAULT
-            val channel = NotificationChannel(channelId, channelName, importance)
 
-            val notificationManager: NotificationManager =
-                context.getSystemService(NotificationManager::class.java)
-            notificationManager.createNotificationChannel(channel)
-        }
-    }
+
 }
-

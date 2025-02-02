@@ -53,5 +53,5 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     implementation(libs.gson)
     implementation(libs.androidx.core.ktx.v1120)
-
+    implementation(libs.androidx.work.runtime.ktx)
 }

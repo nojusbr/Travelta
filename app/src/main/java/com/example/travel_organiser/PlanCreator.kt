@@ -136,7 +136,17 @@ class PlanCreator : AppCompatActivity() {
             val createdTime = getCurrentTime()
 
             if (title.isNotBlank() && description.isNotBlank() && date.isNotBlank() && time.isNotBlank()) {
-                val plan = Plan(title, description, date, time, isReminderChecked, createdDate, createdTime)
+                val planId = UUID.randomUUID().toString()
+                val plan = Plan(
+                    planId,
+                    title,
+                    description,
+                    date,
+                    time,
+                    createdDate,
+                    createdTime,
+                    isReminderChecked
+                )
                 savePlan(plan)
             } else {
                 Toast.makeText(this, "Please fill in all fields", Toast.LENGTH_SHORT).show()
