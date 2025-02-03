@@ -6,19 +6,11 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.graphics.Color
-import android.graphics.Typeface
-import android.os.Build
 import android.os.Bundle
-import android.view.View
-import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
-import androidx.core.content.res.ResourcesCompat
-import androidx.core.view.isInvisible
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.travel_organiser.databinding.ActivityMainMenuBinding
@@ -66,8 +58,14 @@ class MainMenu : AppCompatActivity() {
 
         setSupportActionBar(binding.toolbarTop)
 
+        if (intent.flags and Intent.FLAG_ACTIVITY_CLEAR_TASK != 0) {
+            finishAffinity()
+        }
+
         //call functions
         displayPlans()
+        createNotificationChannel()
+        showNotification()
 
 
         binding.fab.setOnClickListener {
@@ -109,4 +107,45 @@ class MainMenu : AppCompatActivity() {
             }
         }
     }
+
+    private fun createNotificationChannel() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            val channelId = "app_opened_notification"
+            val channelName = "Opened App Notification"
+            val importance = NotificationManager.IMPORTANCE_HIGH
+            val channel = NotificationChannel(channelId, channelName, importance).apply {
+                description = "Everything set for your journey?"
+            }
+            val notificationManager =
+                applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(channel)
+        }
+    }
+
+    private fun showNotification() {
+        val intent = Intent(applicationContext, MainMenu::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+
+        val pendingIntent = PendingIntent.getActivity(
+            applicationContext, 0, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val notification = NotificationCompat.Builder(applicationContext, "app_opened_notification")
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setContentTitle("Your travel reminder is here!")
+            .setContentText("Everything set for your journey?")
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setContentIntent(pendingIntent)
+            .setOngoing(true)
+            .setAutoCancel(false)
+            .build()
+
+        val notificationManager =
+            applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.notify(1, notification)
+    }
+
+
 }

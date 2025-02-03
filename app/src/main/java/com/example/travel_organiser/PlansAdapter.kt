@@ -1,21 +1,13 @@
 package com.example.travel_organiser
 
-import NotificationWorker
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.os.Build
-import android.os.Bundle
 import android.os.CountDownTimer
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.cardview.widget.CardView
-import androidx.core.app.NotificationCompat
 import androidx.recyclerview.widget.RecyclerView
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
@@ -156,8 +148,14 @@ class PlansAdapter(
     }
 
 
-    private fun scheduleNotification(context: Context, planId: String, finishTime: Long, planTitle: String) {
-        val sharedPreferences = context.getSharedPreferences("notification_prefs", Context.MODE_PRIVATE)
+    private fun scheduleNotification(
+        context: Context,
+        planId: String,
+        finishTime: Long,
+        planTitle: String
+    ) {
+        val sharedPreferences =
+            context.getSharedPreferences("notification_prefs", Context.MODE_PRIVATE)
         val hasShownNotification = sharedPreferences.getBoolean("notification_shown_$planId", false)
 
         if (hasShownNotification) return
@@ -179,7 +177,6 @@ class PlansAdapter(
         editor.putBoolean("notification_shown_$planId", true)
         editor.apply()
     }
-
 
 
 }
