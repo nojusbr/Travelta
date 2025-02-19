@@ -11,16 +11,19 @@ import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.workDataOf
 import androidx.work.WorkManager
+import androidx.work.workDataOf
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 class PlansAdapter(
     private val context: Context,
     private var plansList: MutableList<Plan>
 ) : RecyclerView.Adapter<PlansAdapter.PlanViewHolder>() {
+
+    // Define a new list for filtered plans
+    private var filteredPlansList = plansList
 
     class PlanViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val planCard: CardView = itemView.findViewById(R.id.plan_card)
@@ -37,7 +40,7 @@ class PlansAdapter(
     }
 
     override fun onBindViewHolder(holder: PlanViewHolder, position: Int) {
-        val currentPlan = plansList[position]
+        val currentPlan = filteredPlansList[position]
 
         holder.planTitle.text = currentPlan.title.ifEmpty { "No title available" }
         holder.planDescription.text = currentPlan.description.ifEmpty { "No description available" }
@@ -84,8 +87,13 @@ class PlansAdapter(
         }
     }
 
+    override fun getItemCount(): Int = filteredPlansList.size
 
-    override fun getItemCount(): Int = plansList.size
+    // Update data and refresh the RecyclerView
+    fun updateData(newPlans: List<Plan>) {
+        filteredPlansList = newPlans.toMutableList()  // Update the filtered plans list
+        notifyDataSetChanged()  // Refresh the adapter view
+    }
 
     private fun startTimer(
         holder: PlanViewHolder,
@@ -105,7 +113,6 @@ class PlansAdapter(
                 val hours = TimeUnit.MILLISECONDS.toHours(millisUntilFinished) % 24
                 val minutes = TimeUnit.MILLISECONDS.toMinutes(millisUntilFinished) % 60
                 val seconds = TimeUnit.MILLISECONDS.toSeconds(millisUntilFinished) % 60
-
 
                 if (!isReminderSent && isReminderChecked && hours < 1 && days <= 0) {
                     scheduleNotification(
@@ -147,7 +154,6 @@ class PlansAdapter(
         }
     }
 
-
     private fun scheduleNotification(
         context: Context,
         planId: String,
@@ -177,6 +183,4 @@ class PlansAdapter(
         editor.putBoolean("notification_shown_$planId", true)
         editor.apply()
     }
-
-
 }

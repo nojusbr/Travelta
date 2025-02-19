@@ -22,7 +22,18 @@
             android:elevation="6dp"
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
-            android:titleTextColor="#000" />
+            app:popupTheme="@style/ThemeOverlay.AppCompat.Light">
+
+            <androidx.appcompat.widget.SearchView
+                android:id="@+id/search_view"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6.5dp"
+                android:background="@android:color/transparent"
+                android:queryHint="Search plans..."
+                app:iconifiedByDefault="true" />
+
+        </com.google.android.material.appbar.MaterialToolbar>
 
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -52,7 +63,7 @@
 
     <TextView
         android:id="@+id/noPlansTextView"
-        android:layout_width="119dp"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:fontFamily="@font/nunito_lightitalic"
         android:text="No plans ahead?"

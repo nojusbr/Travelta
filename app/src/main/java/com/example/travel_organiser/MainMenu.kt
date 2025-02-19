@@ -7,6 +7,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import androidx.appcompat.widget.SearchView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
@@ -34,18 +35,15 @@ class MainMenu : AppCompatActivity() {
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
 
         binding = ActivityMainMenuBinding.inflate(layoutInflater)
-
         setContentView(binding.root)
 
         plansRecyclerView = binding.plansRecyclerView
-
         plansRecyclerView.layoutManager = GridLayoutManager(this, 1)
 
         val spacing = resources.getDimensionPixelSize(R.dimen.item_spacing)
         plansRecyclerView.addItemDecoration(ItemSpacingDecoration(spacing))
 
         plansAdapter = PlansAdapter(this, plansList)
-
         plansRecyclerView.adapter = plansAdapter
 
         plansRecyclerView.clipToPadding = false
@@ -57,16 +55,30 @@ class MainMenu : AppCompatActivity() {
         window.decorView.systemUiVisibility = 0
 
         setSupportActionBar(binding.toolbarTop)
+        supportActionBar?.title = ""
 
         if (intent.flags and Intent.FLAG_ACTIVITY_CLEAR_TASK != 0) {
             finishAffinity()
         }
 
-        //call functions
+        val searchView = findViewById<SearchView>(R.id.search_view)
+
+        // Set up search functionality
+        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                return false
+            }
+
+            override fun onQueryTextChange(newText: String?): Boolean {
+                filterPlans(newText.orEmpty())
+                return true
+            }
+        })
+
+        // Call functions to display plans and set up notifications
         displayPlans()
         createNotificationChannel()
         showNotification()
-
 
         binding.fab.setOnClickListener {
             val intent = Intent(this, PlanCreator::class.java)
@@ -86,24 +98,21 @@ class MainMenu : AppCompatActivity() {
         plansAdapter.notifyDataSetChanged()
     }
 
-    @Deprecated("Deprecated in Java") // ?? no idea what this does but wtv
+    @Deprecated("Deprecated in Java") // @deprecated annotation for backward compatibility
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 
         if (requestCode == REQUEST_CODE_NEW_PLAN && resultCode == RESULT_OK) {
-            // Retrieve the updated plans list from the intent
             val updatedPlansListJson = data?.getStringExtra("updatedPlansList")
 
             updatedPlansListJson?.let {
-                // Convert the JSON string to a MutableList<Plan> using Gson
                 val gson = Gson()
                 val listType = object : TypeToken<MutableList<Plan>>() {}.type
                 val updatedPlansList: MutableList<Plan> = gson.fromJson(it, listType)
 
-                // Update the current plans list and refresh the adapter
                 plansList.clear()
                 plansList.addAll(updatedPlansList)
-                plansAdapter.notifyDataSetChanged()  // Notify the adapter that the data has changed
+                plansAdapter.notifyDataSetChanged()
             }
         }
     }
@@ -147,5 +156,14 @@ class MainMenu : AppCompatActivity() {
         notificationManager.notify(1, notification)
     }
 
-
+    private fun filterPlans(query: String) {
+        val filteredList = if (query.isEmpty()) {
+            plansList
+        } else {
+            plansList.filter { plan ->
+                plan.title.contains(query, ignoreCase = true)  // Adjust 'name' field as necessary
+            }
+        }
+        plansAdapter.updateData(filteredList)
+    }
 }
