@@ -1,17 +1,14 @@
 package com.example.travel_organiser
 
 import ItemSpacingDecoration
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import androidx.appcompat.widget.SearchView
+import android.view.View
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.core.app.NotificationCompat
+import androidx.appcompat.widget.SearchView
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.travel_organiser.databinding.ActivityMainMenuBinding
@@ -75,10 +72,7 @@ class MainMenu : AppCompatActivity() {
             }
         })
 
-        // Call functions to display plans and set up notifications
         displayPlans()
-        createNotificationChannel()
-        showNotification()
 
         binding.fab.setOnClickListener {
             val intent = Intent(this, PlanCreator::class.java)
@@ -96,9 +90,12 @@ class MainMenu : AppCompatActivity() {
         plansList.clear()
         plansList.addAll(loadedPlansList)
         plansAdapter.notifyDataSetChanged()
+
+        if (plansList.isEmpty()) binding.noPlansTextView.visibility = View.VISIBLE
+        else binding.noPlansTextView.visibility = View.GONE
     }
 
-    @Deprecated("Deprecated in Java") // @deprecated annotation for backward compatibility
+    @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 
@@ -115,45 +112,6 @@ class MainMenu : AppCompatActivity() {
                 plansAdapter.notifyDataSetChanged()
             }
         }
-    }
-
-    private fun createNotificationChannel() {
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            val channelId = "app_opened_notification"
-            val channelName = "Opened App Notification"
-            val importance = NotificationManager.IMPORTANCE_HIGH
-            val channel = NotificationChannel(channelId, channelName, importance).apply {
-                description = "Everything set for your journey?"
-            }
-            val notificationManager =
-                applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
-        }
-    }
-
-    private fun showNotification() {
-        val intent = Intent(applicationContext, MainMenu::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        }
-
-        val pendingIntent = PendingIntent.getActivity(
-            applicationContext, 0, intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        val notification = NotificationCompat.Builder(applicationContext, "app_opened_notification")
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentTitle("Your travel reminder is here!")
-            .setContentText("Everything set for your journey?")
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setContentIntent(pendingIntent)
-            .setOngoing(true)
-            .setAutoCancel(false)
-            .build()
-
-        val notificationManager =
-            applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.notify(1, notification)
     }
 
     private fun filterPlans(query: String) {

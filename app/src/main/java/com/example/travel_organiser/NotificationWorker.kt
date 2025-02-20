@@ -16,24 +16,23 @@ class NotificationWorker(context: Context, workerParams: WorkerParameters) :
         createNotificationChannel() // Ensure the channel is created before showing notification
         val planId = inputData.getString("planId") ?: return Result.failure()
         val planTitle = inputData.getString("planTitle") ?: "Your Plan"  // Default title if not found
-        showNotification(planId, planTitle)
+        showPlanNotification(planId, planTitle)
         return Result.success()
     }
 
-    private fun showNotification(planId: String, planTitle: String) {
-        val intent = Intent(applicationContext, FullPlan::class.java).apply {
-            // Pass only the plan ID so that FullPlan can load full details from storage
-            putExtra("planId", planId)
+    private fun showPlanNotification(planId: String, planTitle: String) {
+        val intent = Intent(applicationContext, MainMenu::class.java).apply {
+            putExtra("openFullPlan", true)  // Flag to indicate the plan should be opened from SharedPreferences
         }
 
         val pendingIntent = PendingIntent.getActivity(
-            applicationContext, 0, intent,
+            applicationContext, planId.hashCode(), intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
         val notification = NotificationCompat.Builder(applicationContext, "notify_channel_id")
             .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentTitle("Reminder for Plan #$planId")
+            .setContentTitle("Reminder for Plan $planTitle")
             .setContentText("You have an upcoming travel plan: $planTitle. Check it now!")
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(pendingIntent)
@@ -44,6 +43,7 @@ class NotificationWorker(context: Context, workerParams: WorkerParameters) :
             applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.notify(planId.hashCode(), notification)
     }
+
 
     private fun createNotificationChannel() {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {

@@ -10,9 +10,11 @@ import android.os.Build
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
-import android.view.MotionEvent
-import android.view.inputmethod.InputMethodManager
-import android.widget.*
+import android.widget.Button
+import android.widget.CheckBox
+import android.widget.EditText
+import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
@@ -21,13 +23,17 @@ import androidx.core.view.WindowInsetsCompat
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
+import java.util.UUID
 
 class PlanCreator : AppCompatActivity() {
 
     private lateinit var planDateTv: TextView
     private lateinit var planTimeTv: TextView
     private var selectedDate: Calendar = Calendar.getInstance()
+    private var position: Int = -1  // Default to -1, means no plan is being edited
 
     @RequiresApi(Build.VERSION_CODES.O)
     @SuppressLint("MissingInflatedId")
@@ -63,6 +69,18 @@ class PlanCreator : AppCompatActivity() {
         val reminderCheckbox: CheckBox = findViewById(R.id.reminder_chkbx)
 
         val maxChars = 300
+
+        // Retrieve the position if editing an existing plan
+        position = intent.getIntExtra("position", -1)
+
+        // If editing, populate fields with existing data
+        if (position != -1) {
+            val existingPlan = getPlanFromPosition(position)
+            planTitleEditable.setText(existingPlan?.title)
+            planDescEditable.setText(existingPlan?.description)
+            planDateTv.text = existingPlan?.date
+            planTimeTv.text = existingPlan?.time
+        }
 
         // Date Picker
         dateBtn.setOnClickListener {
@@ -154,6 +172,17 @@ class PlanCreator : AppCompatActivity() {
         }
     }
 
+    private fun getPlanFromPosition(position: Int): Plan? {
+        val sharedPref = getSharedPreferences("Plans", Context.MODE_PRIVATE)
+        val gson = Gson()
+        val plansJson = sharedPref.getString("plansList", "[]")
+        val listType = object : TypeToken<MutableList<Plan>>() {}.type
+        val plansList: MutableList<Plan> = gson.fromJson(plansJson, listType)
+        return if (position >= 0 && position < plansList.size) {
+            plansList[position]
+        } else null
+    }
+
     private fun isSameDay(cal1: Calendar, cal2: Calendar): Boolean {
         return cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
                 cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR)
@@ -161,44 +190,30 @@ class PlanCreator : AppCompatActivity() {
 
     private fun savePlan(plan: Plan) {
         val sharedPref = getSharedPreferences("Plans", Context.MODE_PRIVATE)
-        val editor = sharedPref.edit()
-
-        val plansJson = sharedPref.getString("plansList", "[]")
         val gson = Gson()
+        val plansJson = sharedPref.getString("plansList", "[]")
         val listType = object : TypeToken<MutableList<Plan>>() {}.type
         val plansList: MutableList<Plan> = gson.fromJson(plansJson, listType)
 
-        plansList.add(plan)
+        // If editing, replace the existing plan at position
+        if (position != -1) {
+            plansList[position] = plan
+        } else {
+            plansList.add(plan)
+        }
 
         val updatedPlansJson = gson.toJson(plansList)
-        editor.putString("plansList", updatedPlansJson)
-        editor.apply()
+        sharedPref.edit().putString("plansList", updatedPlansJson).apply()
 
         val resultIntent = Intent()
         resultIntent.putExtra("updatedPlansList", updatedPlansJson)
         setResult(RESULT_OK, resultIntent)
 
-        // Clear the activity stack and go to MainMenu
+
         val intent = Intent(this, MainMenu::class.java)
-        intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP // Clears the activity stack
+        intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
         startActivity(intent)
-        finish() // Finish the current PlanCreator activity
-    }
-
-    override fun onTouchEvent(event: MotionEvent): Boolean {
-        if (event.action == MotionEvent.ACTION_DOWN) {
-            val focusedView = currentFocus
-            if (focusedView is EditText) {
-                hideKeyboard(focusedView)
-                focusedView.clearFocus()
-            }
-        }
-        return super.onTouchEvent(event)
-    }
-
-    private fun hideKeyboard(editText: EditText) {
-        val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        imm.hideSoftInputFromWindow(editText.windowToken, 0)
+        finish()
     }
 
     private fun getCurrentTime(): String {
@@ -211,4 +226,3 @@ class PlanCreator : AppCompatActivity() {
         return sdf.format(Date())
     }
 }
-
